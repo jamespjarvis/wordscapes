@@ -1,3 +1,6 @@
+const fs = require("fs");
+const path = require("path");
+
 const initialize2DArray = (w, h, val = null) =>
   Array.from({ length: h }).map(() => Array.from({ length: w }).fill(val));
 
@@ -71,11 +74,8 @@ const getCharacterPairFrequencies = words => {
 const initializeArrayWithSeed = (arr, n) => {
   const result = [];
   const getRandom = () => {
-    const char = arr[Math.floor(Math.random() * arr.length)];
-    if (countOccurrences(result, char) >= 2) {
-      getRandom();
-    }
-    return char;
+    const word = arr[Math.floor(Math.random() * arr.length)];
+    return result.includes(word) ? getRandom() : word;
   };
 
   for (let i = 0; i < n; i++) {
@@ -141,7 +141,13 @@ const getAnagrams = input => {
   return anagrams;
 };
 
+const readFound = filePath => {
+  const data = JSON.parse(fs.readFileSync(filePath));
+  console.log(data);
+};
+
 module.exports = {
+  readFound,
   getAnagrams,
   initialize2DArray,
   deepFlatten,

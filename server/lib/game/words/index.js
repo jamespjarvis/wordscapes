@@ -8,16 +8,20 @@ const {
   bifurcateBy
 } = require("../utils");
 
+const masterDictionary = require("./lists/american/dictionary.json");
+
 const getLetterValues = letterFrequencies => {
   const freqArr = Object.keys(letterFrequencies);
   const max = Math.max(...freqArr.map(f => letterFrequencies[f]));
-  return freqArr.map(f => {
+  return freqArr.reduce((acc, char) => {
     return {
-      letter: f,
-      freq: letterFrequencies[f],
-      value: Math.ceil((1 - letterFrequencies[f] / max) * 10)
+      ...acc,
+      [char]: {
+        freq: letterFrequencies[char],
+        value: Math.ceil((1 - letterFrequencies[char] / max) * 10)
+      }
     };
-  });
+  }, {});
 };
 
 const generateWordKey = letterFrequencies => {
@@ -29,6 +33,9 @@ const generateWordKey = letterFrequencies => {
   const m = median(letterValues.map(x => x.freq));
   const [common, uncommon] = bifurcateBy(letterValues, x => x.freq > m);
   // const pairs = letterPairFrequencies.filter(p => p.freq > 250);
+  const lessFreq = uncommon.filter(
+    l => !["Q", "Z", "X", "J"].includes(l.letter)
+  );
 
   const key = [
     // ...deepFlatten(
@@ -39,7 +46,7 @@ const generateWordKey = letterFrequencies => {
     //   })
     // ),
     ...initializeArrayWithSeed(common, 5),
-    ...initializeArrayWithSeed(uncommon, 1)
+    ...initializeArrayWithSeed(lessFreq, 1)
     // ...initializeArrayWithSeed(letterValues, 6)
   ];
 
@@ -49,6 +56,13 @@ const generateWordKey = letterFrequencies => {
   };
 };
 
+const getKey = keys => {
+  const key = keys[Math.floor(Math.random() * keys.length)].split("");
+  return {
+    key,
+    values: key.map((k, i) => ({ ...k, id: i }))
+  };
+};
 const getNormalizedWordFrequencies = wordLists => {
   const wordLengthFrequencies = wordLists.reduce((a, c, i) => {
     a[i + 3] = c.length;
@@ -59,6 +73,7 @@ const getNormalizedWordFrequencies = wordLists => {
     return { len, prob: wordLengthFrequencies[len] / total };
   });
 };
+
 const pickWordLengthByProbability = arr => {
   const winner = Math.random();
   let threshold = 0;
@@ -87,10 +102,17 @@ const generateWordList = (
   maxWordLength,
   wordLists,
   letterFrequencies,
-  wordFrequencies
+  wordFrequencies,
+  keys,
+  n
 ) => {
-  const { key, values } = generateWordKey(letterFrequencies);
+  const result = {
+    words: [],
+    key: []
+  };
 
+  // const { key, values } = generateWordKey(letterFrequencies);
+  const { key, values } = getKey(keys);
   const wordLengths = initializeArrayWithValues(numWords).map(
     () => pickWordLengthByProbability(wordFrequencies).len
   );
@@ -102,31 +124,75 @@ const generateWordList = (
       : a;
   }, []);
 
-  return words.length < numWords
-    ? generateWordList(
+  if (words.length >= numWords) {
+    result.words = words;
+    result.key = values;
+    result.success = true;
+  } else {
+    if (n) {
+      return generateWordList(
         numWords,
         maxWordLength,
         wordLists,
         letterFrequencies,
-        wordFrequencies
-      )
-    : { words, key: values };
+        wordFrequencies,
+        keys,
+        n
+      );
+    } else {
+      result.success = false;
+      result.error = new Error();
+    }
+  }
+  return result;
 };
 
 const getWordList = (numWords, maxWordLength = 6) => {
-  const wordLists = initializeArrayWithRange(maxWordLength, 3).map(n =>
-    require(`./lists/popular/${n}.json`)
-  );
-  const wordFrequencies = getNormalizedWordFrequencies(wordLists);
-  const letterFrequencies = getCharacterFrequencies(deepFlatten(wordLists));
+  const maxWords = Object.keys(masterDictionary).reduce((a, c) => {
+    return Math.max(masterDictionary[c].length, a);
+  }, 0);
 
-  return generateWordList(
-    numWords,
-    maxWordLength,
-    wordLists,
-    letterFrequencies,
-    wordFrequencies
+  const wordCount = Math.min(numWords, maxWords);
+  const letterFrequencies = getLetterValues(
+    getCharacterFrequencies(Object.keys(masterDictionary))
   );
+
+  const filteredDictionary = Object.keys(masterDictionary).reduce(
+    (acc, curr) => {
+      const filtered = masterDictionary[curr].filter(
+        word => word.length <= maxWordLength
+      );
+      return filtered.length >= wordCount ? { ...acc, [curr]: filtered } : acc;
+    },
+    {}
+  );
+
+  const matchingKeyLengths = Object.keys(filteredDictionary).filter(
+    k => masterDictionary[k].length >= wordCount
+  );
+
+  const randomKey =
+    matchingKeyLengths[Math.floor(Math.random() * matchingKeyLengths.length)];
+
+  const words = initializeArrayWithSeed(masterDictionary[randomKey], wordCount);
+  const key = randomKey
+    .split("")
+    .map((k, i) => ({ letter: k, id: i, value: letterFrequencies[k].value }));
+
+  return {
+    success: true,
+    words,
+    key
+  };
+  // return generateWordList(
+  //   numWords,
+  //   maxWordLength,
+  //   wordLists,
+  //   letterFrequencies,
+  //   wordFrequencies,
+  //   keys,
+  //   1e2
+  // );
 };
 
 module.exports = { getWordList };

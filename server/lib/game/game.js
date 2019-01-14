@@ -4,7 +4,7 @@ const { Prerender } = require("./prerender");
 const { shuffle } = require("./utils");
 
 class Game {
-  constructor(numWords = 6) {
+  constructor(numWords = 5) {
     this.key = [];
     this.words = [];
     this.guessed = [];
@@ -27,16 +27,20 @@ class Game {
     };
 
     this.isLoading = true;
-
     this.levelComplete = false;
   }
   initialize() {
+    this.numWords = this.initialNumWords + this.level;
+
     this.isLoading = true;
     this.levelComplete = false;
 
-    const { words, key } = getWordList(this.numWords, this.maxWordLength);
-    const grid = Prerender.getOptimizedGrid(words, 100);
-
+    const { success, words, key } = getWordList(
+      this.numWords,
+      this.maxWordLength
+    );
+    const grid = Prerender.getOptimizedGrid(words, 50);
+    if (!grid) return this.initialize();
     this.numWords = words.length;
     this.guessed = [];
     this.words = words;

@@ -47,6 +47,7 @@
             :key="`cell-${i}`"
             class="grid__cell"
             :class="getCellClassList(c)"
+            :style="{ fontSize: `${cellSize * 0.75}px` }"
           >
             <span v-if="isProduction">
               {{ c && !c.isHidden ? c.letter : "" }}
@@ -119,8 +120,9 @@ export default {
       pressedKeys: [],
       game: gameObject,
       leftDrawerOpen: this.$q.platform.is.desktop,
-      socket: io("/"),
-      isLoading: false
+      socket: isProduction ? io("/") : io("http://localhost:8001"),
+      isLoading: false,
+      cellSize: 24
     };
   },
   computed: {
@@ -160,13 +162,15 @@ export default {
         const padding = 15;
         const gap = 2;
         const maxDimension = Math.max(this.grid.length, this.grid[0].length);
-        const cellSize = this.getCellSize(maxDimension, gap, padding);
+        this.cellSize = this.getCellSize(maxDimension, gap, padding);
 
         return {
           gridGap: `${gap}px`,
           padding: `${padding}px`,
-          gridTemplateColumns: `repeat(${this.grid[0].length}, ${cellSize}px)`,
-          gridTemplateRows: `repeat(${this.grid.length}, ${cellSize}px)`
+          gridTemplateColumns: `repeat(${this.grid[0].length}, ${
+            this.cellSize
+          }px)`,
+          gridTemplateRows: `repeat(${this.grid.length}, ${this.cellSize}px)`
         };
       }
       return {};
