@@ -19,6 +19,11 @@ export const throttle = (fn, wait) => {
   };
 };
 
+export const difference = (a, b) => {
+  const s = new Set(b);
+  return a.filter(x => !s.has(x));
+};
+
 export const round = (n, decimals = 0) =>
   Number(`${Math.round(`${n}e${decimals}`)}e-${decimals}`);
 

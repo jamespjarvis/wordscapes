@@ -25,7 +25,7 @@
         </q-toolbar-title>
         <q-toolbar-title
           >Score
-          <div slot="subtitle">{{ score }}</div>
+          <div slot="subtitle" :class="scoreClassList">{{ score }}</div>
         </q-toolbar-title>
       </q-toolbar>
     </q-layout-header>
@@ -41,25 +41,13 @@
 
     <q-page-container :style="appStyle">
       <div class="app__container" :class="isLoading ? 'is-loading' : ''">
-        <div ref="gridContainer" class="grid__container" :style="gridStyle">
-          <div
-            v-for="(c, i) in cells"
-            :key="`cell-${i}`"
-            class="grid__cell"
-            :class="getCellClassList(c)"
-            :style="{ fontSize: `${cellSize * 0.75}px` }"
-          >
-            <span v-if="isProduction">
-              {{ c && !c.isHidden ? c.letter : "" }}
-            </span>
-            <span v-else>{{ c ? c.letter : "" }} </span>
-          </div>
-        </div>
-        <div class="pressed__container" @click="clearPressed()">
-          <div class="pressed q-display-2 text-weight-bolder">
-            {{ pressed }}
-          </div>
-        </div>
+        <Grid
+          :cell-size="cellSize"
+          :grid-style="gridStyle"
+          :is-production="isProduction"
+          :cells="cells"
+        />
+        <Pressed :pressed="pressed" @clear-pressed="clearPressed" />
         <Key
           :letters="key"
           :pressed-keys="pressedKeys"
@@ -77,10 +65,13 @@ import axios from "axios";
 import io from "socket.io-client";
 
 import ApiService from "@/common/api.service";
-import { round, shuffle, importAll } from "./utils";
+import { round, shuffle, importAll, difference } from "./utils";
 
 import Key from "@/components/Key";
 import Menu from "@/components/Menu";
+import Grid from "@/components/Grid";
+import Pressed from "@/components/Pressed";
+
 const bgs = importAll(require.context("@/assets/bgs"));
 
 const saveGameState = game => {
@@ -110,7 +101,9 @@ export default {
   name: "App",
   components: {
     Menu,
-    Key
+    Key,
+    Grid,
+    Pressed
   },
   data() {
     return {
@@ -122,7 +115,8 @@ export default {
       leftDrawerOpen: this.$q.platform.is.desktop,
       socket: isProduction ? io("/") : io("http://localhost:8001"),
       isLoading: false,
-      cellSize: 24
+      cellSize: 24,
+      scoreClassList: ""
     };
   },
   computed: {
@@ -162,7 +156,8 @@ export default {
         const padding = 15;
         const gap = 2;
         const maxDimension = Math.max(this.grid.length, this.grid[0].length);
-        this.cellSize = this.getCellSize(maxDimension, gap, padding);
+
+        this.getCellSize(maxDimension, gap, padding);
 
         return {
           gridGap: `${gap}px`,
@@ -177,9 +172,15 @@ export default {
     }
   },
   watch: {
+    score() {
+      this.scoreClassList = "animated heartBeat";
+      setTimeout(() => {
+        this.scoreClassList = "";
+      }, 2000);
+    },
     isLoading(to) {
       if (to) {
-        this.$q.loading.show({ message: "Loading next level..." });
+        this.$q.loading.show({ message: "Loading board..." });
       } else {
         this.$q.loading.hide();
       }
@@ -230,6 +231,17 @@ export default {
     }
     this.socket.on("UPDATE", ({ game }) => {
       if (game.guessed.length !== this.game.guessed.length) {
+        const diff = difference(game.guessed, this.game.guessed);
+        diff.forEach(d => {
+          const cells = game.board.cells.filter(
+            cell => cell && cell.words.includes(d)
+          );
+          cells.forEach(c => {
+            const cell = game.board.cells.find(x => x === c);
+            cell.animate = true;
+          });
+        });
+
         this.pressed = "";
         this.pressedKeys = [];
       }
@@ -242,7 +254,7 @@ export default {
       let gridWidth = Math.min(document.body.offsetWidth, 720);
       gridWidth -= 2 * padding;
       gridWidth -= gap * (numCells - 1);
-      return round(gridWidth / numCells, 2);
+      this.cellSize = round(gridWidth / numCells, 2);
     },
     getCellClassList(cell) {
       if (cell) {
@@ -383,47 +395,32 @@ body {
       display: none;
     }
   }
-  .grid__container {
-    display: grid;
-
-    width: 100%;
-    flex: 1;
-    .grid__cell {
-      text-align: center;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-size: 1rem;
-      border: 1px solid transparent;
-
-      &.letter {
-        background-color: rgba(221, 221, 221, 0.75);
-        // border-color: #aaa;
-        font-family: "Roboto";
-        font-size: 1.5rem;
-        font-weight: 700;
-        --visible: #9068be;
-        color: rgba(255, 255, 255, 0);
-        transition: 500ms ease;
-        &.is-visible {
-          color: #fff;
-          // border-color: var(--q-color-positive) !important;
-          // background-color: var(--q-color-positive) !important;
-        }
-      }
-    }
+}
+@keyframes heartBeat {
+  0% {
+    transform: scale(1);
   }
-  .pressed__container {
-    height: 112px;
-    padding: 2rem 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    .pressed {
-      color: WHITE;
-      text-align: center;
-      letter-spacing: 5px;
-    }
+
+  14% {
+    transform: scale(1.3);
   }
+
+  28% {
+    transform: scale(1);
+  }
+
+  42% {
+    transform: scale(1.3);
+  }
+
+  70% {
+    transform: scale(1);
+  }
+}
+
+.heartBeat {
+  animation-name: heartBeat;
+  animation-duration: 1.3s;
+  animation-timing-function: ease-in-out;
 }
 </style>
