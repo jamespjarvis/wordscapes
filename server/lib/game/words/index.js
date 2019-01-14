@@ -8,7 +8,7 @@ const {
   bifurcateBy
 } = require("../utils");
 
-const masterDictionary = require("./lists/american/dictionary.json");
+const masterDictionary = require("./lists/popular/dictionary.json");
 
 const getLetterValues = letterFrequencies => {
   const freqArr = Object.keys(letterFrequencies);
