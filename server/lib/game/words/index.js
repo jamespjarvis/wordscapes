@@ -151,7 +151,7 @@ const getWordList = (numWords, maxWordLength = 6) => {
   const maxWords = Object.keys(masterDictionary).reduce((a, c) => {
     return Math.max(masterDictionary[c].length, a);
   }, 0);
-
+  console.log(maxWords);
   const wordCount = Math.min(numWords, maxWords);
   const letterFrequencies = getLetterValues(
     getCharacterFrequencies(Object.keys(masterDictionary))

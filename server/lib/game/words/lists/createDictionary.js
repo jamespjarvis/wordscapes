@@ -42,24 +42,28 @@ const masterDictionary = masterList.reduce((acc, word) => {
     .split("")
     .sort()
     .join("");
-  const key = Object.keys(keyDictionary).find(k => {
+  const matchingKeys = Object.keys(keyDictionary).reduce((acc, k) => {
     const splitKey = k.split("");
     const keyCharacterFrequencies = getCharacterFrequencies(k.split(""));
     if (sortedLetters.split("").every(c => splitKey.includes(c))) {
       const f = getCharacterFrequencies(sortedLetters.split(""));
-      return sortedLetters
-        .split("")
-        .every(c => f[c] <= keyCharacterFrequencies[c]);
+      if (
+        sortedLetters.split("").every(c => f[c] <= keyCharacterFrequencies[c])
+      ) {
+        acc.push(k);
+      }
     }
-    return false;
-  });
+    return acc;
+  }, []);
 
-  if (key) {
-    if (acc[key]) {
-      acc[key] = !acc[key].includes(word) ? [...acc[key], word] : acc[key];
-    } else {
-      acc[key] = [word];
-    }
+  if (matchingKeys.length) {
+    matchingKeys.forEach(key => {
+      if (acc[key]) {
+        acc[key] = !acc[key].includes(word) ? [...acc[key], word] : acc[key];
+      } else {
+        acc[key] = [word];
+      }
+    });
   }
 
   return acc;
