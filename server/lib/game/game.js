@@ -22,8 +22,8 @@ class Game {
     this.canShowRandomWord = false;
 
     this.prices = {
-      randomCell: 100,
-      randomWord: 500
+      randomCell: 50,
+      randomWord: 100
     };
 
     this.isLoading = true;
