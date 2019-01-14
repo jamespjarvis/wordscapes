@@ -18,7 +18,7 @@ const getLetterValues = letterFrequencies => {
       ...acc,
       [char]: {
         freq: letterFrequencies[char],
-        value: Math.ceil((1 - letterFrequencies[char] / max) * 10)
+        value: Math.ceil((1 - letterFrequencies[char] / max) * 30)
       }
     };
   }, {});
