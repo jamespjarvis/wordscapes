@@ -119,7 +119,7 @@ export default {
       pressedKeys: [],
       game: gameObject,
       leftDrawerOpen: this.$q.platform.is.desktop,
-      socket: io("localhost:3000"),
+      socket: io("/"),
       isLoading: false
     };
   },

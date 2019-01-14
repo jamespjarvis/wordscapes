@@ -14,7 +14,7 @@
 importScripts("https://storage.googleapis.com/workbox-cdn/releases/3.6.3/workbox-sw.js");
 
 importScripts(
-  "/precache-manifest.a136a96b8fbebb82d66e4fc51d6b8a8d.js"
+  "/precache-manifest.26d74686e0039d676a83ee3d50edfc37.js"
 );
 
 workbox.core.setCacheNameDetails({prefix: "wordscapes"});
