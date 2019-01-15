@@ -3,7 +3,7 @@
     v-model="isOpen"
     :content-class="$q.theme === 'mat' ? 'bg-grey-2' : null"
   >
-    <q-list no-border link inset-delimiter>
+    <q-list no-border inset-delimiter>
       <q-list no-border link inset-delimiter>
         <q-list-header>Wordscapes</q-list-header>
         <q-item @click.native="() => $emit('handler:show-cell')">
@@ -32,6 +32,14 @@
           <q-item-main label="Forfeit" sublabel="Reveal board"></q-item-main>
         </q-item>
       </q-list>
+      <q-item-separator />
+      <q-list no-border inset-delimiter>
+        <q-item>
+          <q-item-side icon="trending_up"></q-item-side>
+          <q-item-main label="High Score"></q-item-main>
+          <q-item-side>{{ highScore }}</q-item-side>
+        </q-item>
+      </q-list>
     </q-list>
   </q-layout-drawer>
 </template>
@@ -43,6 +51,10 @@ export default {
     leftDrawerOpen: {
       type: Boolean,
       default: false
+    },
+    highScore: {
+      type: Number,
+      required: true
     }
   },
   data() {

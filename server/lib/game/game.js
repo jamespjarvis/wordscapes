@@ -4,7 +4,7 @@ const { Prerender } = require("./prerender");
 const { shuffle } = require("./utils");
 
 class Game {
-  constructor(numWords = 5) {
+  constructor(numWords = 6) {
     this.key = [];
     this.words = [];
     this.guessed = [];
@@ -30,7 +30,7 @@ class Game {
     this.levelComplete = false;
   }
   initialize() {
-    this.numWords = this.initialNumWords + this.level;
+    this.numWords = this.initialNumWords + Math.floor(this.level / 3);
 
     this.isLoading = true;
     this.levelComplete = false;
@@ -109,12 +109,25 @@ class Game {
     this.board = new Board();
     this.board.loadSavedBoard(game.board);
   }
+  checkCompleteWord(cell) {
+    const { words } = cell;
+    words.forEach(word => {
+      const matchingCells = this.board.cells.reduce((a, c) => {
+        return c && c.words.includes(word) ? [...a, c] : a;
+      }, []);
+      if (matchingCells.every(c => !c.isHidden)) {
+        this.guessed.push(word);
+      }
+    });
+    this.checkGuessedForWin();
+  }
   showRandomCell() {
     if (this.score >= this.prices.randomCell) {
       this.score -= this.prices.randomCell;
       const hiddenCells = this.board.cells.filter(c => c && c.isHidden);
       const cell = hiddenCells[Math.floor(Math.random() * hiddenCells.length)];
       cell.isHidden = false;
+      this.checkCompleteWord(cell);
     }
   }
   showRandomWord() {
@@ -132,6 +145,7 @@ class Game {
       cells.forEach(c => (c.isHidden = false));
 
       this.guessed.push(word);
+      this.checkGuessedForWin();
     }
   }
 }

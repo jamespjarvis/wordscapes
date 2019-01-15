@@ -14,7 +14,6 @@
           icon="menu"
           @click="leftDrawerOpen = !leftDrawerOpen"
         />
-
         <q-toolbar-title
           >Level
           <div slot="subtitle">{{ level }}</div>
@@ -32,6 +31,7 @@
 
     <Menu
       :left-drawer-open="leftDrawerOpen"
+      :high-score="highScore"
       @update:drawer="val => (leftDrawerOpen = val)"
       @handler:show-cell="showRandomCell"
       @handler:show-word="showRandomWord"
@@ -40,21 +40,23 @@
     ></Menu>
 
     <q-page-container :style="appStyle">
-      <div class="app__container" :class="isLoading ? 'is-loading' : ''">
-        <Grid
-          :cell-size="cellSize"
-          :grid-style="gridStyle"
-          :is-production="isProduction"
-          :cells="cells"
-        />
-        <Pressed :pressed="pressed" @clear-pressed="clearPressed" />
-        <Key
-          :letters="key"
-          :pressed-keys="pressedKeys"
-          @update:pressed="updatePressed"
-          @keypress="handleKeyPress"
-          @shufflekey="shuffleKey"
-        />
+      <div class="app__wrapper" :class="isLoading ? 'is-loading' : ''">
+        <div ref="appContainer" class="app__container">
+          <Grid
+            :cell-size="cellSize"
+            :grid-style="gridStyle"
+            :is-production="isProduction"
+            :cells="cells"
+          />
+          <Pressed :pressed="pressed" @clear-pressed="clearPressed" />
+          <Key
+            :letters="key"
+            :pressed-keys="pressedKeys"
+            @update:pressed="updatePressed"
+            @keypress="handleKeyPress"
+            @shufflekey="shuffleKey"
+          />
+        </div>
       </div>
     </q-page-container>
   </q-layout>
@@ -65,7 +67,7 @@ import axios from "axios";
 import io from "socket.io-client";
 
 import ApiService from "@/common/api.service";
-import { round, shuffle, importAll, difference } from "./utils";
+import { throttle, round, shuffle, importAll, difference } from "./utils";
 
 import Key from "@/components/Key";
 import Menu from "@/components/Menu";
@@ -80,6 +82,11 @@ const saveGameState = game => {
 const deleteGameState = () => {
   localStorage.removeItem("game");
 };
+
+const setHighScore = score => {
+  localStorage.setItem("highScore", score);
+};
+const getHighScore = () => parseInt(localStorage.getItem("highScore")) || 0;
 
 const isProduction = process.env.NODE_ENV === "production";
 
@@ -116,7 +123,8 @@ export default {
       socket: isProduction ? io("/") : io("http://localhost:8001"),
       isLoading: false,
       cellSize: 24,
-      scoreClassList: ""
+      scoreClassList: "",
+      highScore: 0
     };
   },
   computed: {
@@ -152,23 +160,7 @@ export default {
       return this.game && this.game.levelComplete;
     },
     gridStyle() {
-      if (this.grid[0]) {
-        const padding = 15;
-        const gap = 2;
-        const maxDimension = Math.max(this.grid.length, this.grid[0].length);
-
-        this.getCellSize(maxDimension, gap, padding);
-
-        return {
-          gridGap: `${gap}px`,
-          padding: `${padding}px`,
-          gridTemplateColumns: `repeat(${this.grid[0].length}, ${
-            this.cellSize
-          }px)`,
-          gridTemplateRows: `repeat(${this.grid.length}, ${this.cellSize}px)`
-        };
-      }
-      return {};
+      return this.computeGridStyle();
     }
   },
   watch: {
@@ -177,6 +169,10 @@ export default {
       setTimeout(() => {
         this.scoreClassList = "";
       }, 2000);
+      if (this.score > this.highScore) {
+        this.highScore = this.score;
+        setHighScore(this.highScore);
+      }
     },
     isLoading(to) {
       if (to) {
@@ -186,10 +182,11 @@ export default {
       }
     },
     async hasCompletedLevel(to) {
+      const { data } = await ApiService.get("/catfact");
       if (to) {
         this.$q.notify({
           message: "Congratulations!",
-          detail: "Wow! So good. So good.",
+          detail: data.fact,
           type: "info",
           color: "info",
           position: "center",
@@ -229,6 +226,7 @@ export default {
     } else {
       await this.loadGame();
     }
+
     this.socket.on("UPDATE", ({ game }) => {
       if (game.guessed.length !== this.game.guessed.length) {
         const diff = difference(game.guessed, this.game.guessed);
@@ -248,10 +246,19 @@ export default {
       this.game = game;
       saveGameState(this.game);
     });
+
+    window.addEventListener("resize", this.handleWindowResize);
+
+    this.highScore = getHighScore();
   },
   methods: {
+    handleWindowResize: throttle(function() {
+      this.computeGridStyle();
+    }, 50),
     getCellSize(numCells, gap, padding) {
-      let gridWidth = Math.min(document.body.offsetWidth, 720);
+      const containerSize = this.$refs.appContainer.offsetWidth;
+
+      let gridWidth = Math.min(containerSize, 720);
       gridWidth -= 2 * padding;
       gridWidth -= gap * (numCells - 1);
       this.cellSize = round(gridWidth / numCells, 2);
@@ -271,10 +278,10 @@ export default {
       this.isLoading = true;
       if (localStorage.getItem("game")) {
         const game = JSON.parse(localStorage.getItem("game"));
-        const { data } = await ApiService.post("/", { game });
+        const { data } = await ApiService.post("game", { game });
         this.game = data.game;
       } else {
-        const { data } = await ApiService.get("/");
+        const { data } = await ApiService.get("game");
         this.game = data.game;
       }
       saveGameState(this.game);
@@ -351,6 +358,25 @@ export default {
     updatePressed() {
       this.pressed = this.pressed.substr(0, this.pressed.length - 1);
       this.pressedKeys.pop();
+    },
+    computeGridStyle() {
+      if (this.grid[0]) {
+        const padding = 15;
+        const gap = 2;
+        const maxDimension = Math.max(this.grid.length, this.grid[0].length);
+
+        this.getCellSize(maxDimension, gap, padding);
+
+        return {
+          gridGap: `${gap}px`,
+          padding: `${padding}px`,
+          gridTemplateColumns: `repeat(${this.grid[0].length}, ${
+            this.cellSize
+          }px)`,
+          gridTemplateRows: `repeat(${this.grid.length}, ${this.cellSize}px)`
+        };
+      }
+      return {};
     }
   }
 };
@@ -375,24 +401,33 @@ body {
     opacity: 1;
   }
 }
-.app__container {
+.app__wrapper {
   height: calc(100vh - 51px);
-  display: flex;
-  flex-direction: column;
   background-color: rgba(44, 44, 44, 0.25);
-  @media (min-width: 769px) {
-    align-items: center;
-    & > * {
-      width: 100%;
-      max-width: 769px;
-    }
-  }
 
   &.is-loading {
     .grid__container,
     .pressed__container,
     .key__container {
       display: none;
+    }
+  }
+
+  .app__container {
+    height: 100%;
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    .grid__container {
+      flex: 1;
+    }
+    @media (min-width: 769px) {
+      align-items: center;
+      & > * {
+        width: 100%;
+      }
     }
   }
 }

@@ -19,6 +19,13 @@ export const throttle = (fn, wait) => {
   };
 };
 
+export const debounce = (fn, ms = 0) => {
+  let timeoutId;
+  return function(...args) {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => fn.apply(this, args), ms);
+  };
+};
 export const difference = (a, b) => {
   const s = new Set(b);
   return a.filter(x => !s.has(x));
