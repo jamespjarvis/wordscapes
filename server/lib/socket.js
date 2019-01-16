@@ -287,8 +287,15 @@ module.exports = function(server) {
 
     socket.on("GET_MESSAGE_HISTORY", ({ gameId }) => {
       if (currentGames.has(gameId)) {
-        const { messages } = currentGames.get(gameId);
-        messages.forEach(message => socket.emit("MESSAGE", message));
+        const targetGame = currentGames.get(gameId);
+        if (targetGame.messages) {
+          targetGame.messages.forEach(message =>
+            socket.emit("MESSAGE", message)
+          );
+        } else {
+          targetGame.messages = [];
+          currentGames.set(gameId, targetGame);
+        }
       }
     });
   });
