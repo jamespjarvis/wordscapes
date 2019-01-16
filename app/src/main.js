@@ -14,7 +14,12 @@ import "quasar-extras/ionicons";
 import "quasar-extras/mdi";
 import Quasar from "quasar";
 
+import VueSocketIO from "vue-socket.io-extended";
+import io from "socket.io-client";
+
 import ApiService from "@/common/api.service";
+import store from "@/store";
+import router from "@/router";
 
 ApiService.init();
 
@@ -27,9 +32,15 @@ Vue.use(Quasar, {
     }
   }
 });
+const isProduction = process.env.NODE_ENV === "production";
+const SocketInstance = isProduction ? io("/") : io("http://localhost:8001");
+
+Vue.use(VueSocketIO, SocketInstance, { store });
 
 Vue.config.productionTip = false;
 
 new Vue({
+  store,
+  router,
   render: h => h(App)
 }).$mount("#app");

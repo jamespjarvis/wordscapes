@@ -1,10 +1,11 @@
 const Board = require("./board");
 const { getWordList } = require("./words");
 const { Prerender } = require("./prerender");
-const { shuffle } = require("./utils");
+const { shuffle, generateId } = require("./utils");
 
 class Game {
   constructor(numWords = 6) {
+    this.id = generateId();
     this.key = [];
     this.words = [];
     this.guessed = [];
@@ -18,27 +19,19 @@ class Game {
     this.numWords = numWords;
     this.maxWordLength = 6;
 
-    this.canShowRandomCell = false;
-    this.canShowRandomWord = false;
-
     this.prices = {
       randomCell: 50,
       randomWord: 100
     };
 
-    this.isLoading = true;
     this.levelComplete = false;
   }
   initialize() {
-    this.numWords = this.initialNumWords + Math.floor(this.level / 3);
-
-    this.isLoading = true;
     this.levelComplete = false;
 
-    const { success, words, key } = getWordList(
-      this.numWords,
-      this.maxWordLength
-    );
+    this.numWords = this.initialNumWords + Math.floor(this.level / 3);
+
+    const { words, key } = getWordList(this.numWords, this.maxWordLength);
     const grid = Prerender.getOptimizedGrid(words, 50);
     if (!grid) return this.initialize();
     this.numWords = words.length;
@@ -47,9 +40,6 @@ class Game {
     this.key = key;
     this.board.grid = grid;
     this.board.cells = this.board.initializeCells();
-    this.canShowRandomCell = true;
-    this.canShowRandomWord = true;
-    this.isLoading = false;
   }
   checkWordsForMatch(pressed) {
     if (this.words.includes(pressed) && !this.guessed.includes(pressed)) {

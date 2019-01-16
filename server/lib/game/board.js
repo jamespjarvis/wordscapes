@@ -1,12 +1,5 @@
 const { initialize2DArray, deepFlatten } = require("./utils");
-const { Cell } = require("./cell");
-
-class Node {
-  constructor(isStartOfWord, index) {
-    this.isStartOfWord = isStartOfWord;
-    this.index = index;
-  }
-}
+const { Cell, Node } = require("./cell");
 
 class Board {
   constructor() {

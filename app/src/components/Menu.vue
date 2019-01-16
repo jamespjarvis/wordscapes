@@ -6,6 +6,20 @@
     <q-list no-border inset-delimiter>
       <q-list no-border link inset-delimiter>
         <q-list-header>Wordscapes</q-list-header>
+        <q-item @click.native="() => $emit('handler:new-game')">
+          <q-item-side icon="dashboard" />
+          <q-item-main
+            label="New Game"
+            sublabel="Start a new game"
+          ></q-item-main>
+        </q-item>
+        <q-item @click.native="() => $emit('handler:forfeit')">
+          <q-item-side icon="ion-ios-alert" />
+          <q-item-main label="Forfeit" sublabel="Reveal board"></q-item-main>
+        </q-item>
+      </q-list>
+      <q-list no-border link inset-delimiter>
+        <q-list-header>Hacks</q-list-header>
         <q-item @click.native="() => $emit('handler:show-cell')">
           <q-item-side icon="ion-ios-color-wand" />
           <q-item-main
@@ -20,16 +34,15 @@
             sublabel="Reveal one word (100pts)"
           ></q-item-main>
         </q-item>
-        <q-item @click.native="() => $emit('handler:new-game')">
-          <q-item-side icon="dashboard" />
+      </q-list>
+      <q-list no-border link inset-delimiter>
+        <q-list-header>Multiplayer</q-list-header>
+        <q-item @click.native="() => $emit('handler:join-game')">
+          <q-item-side icon="cake" />
           <q-item-main
-            label="New Game"
-            sublabel="Start a new game"
+            label="Join Game"
+            sublabel="Play with other people"
           ></q-item-main>
-        </q-item>
-        <q-item @click.native="() => $emit('handler:forfeit')">
-          <q-item-side icon="ion-ios-alert" />
-          <q-item-main label="Forfeit" sublabel="Reveal board"></q-item-main>
         </q-item>
       </q-list>
       <q-item-separator />
@@ -39,12 +52,26 @@
           <q-item-main label="High Score"></q-item-main>
           <q-item-side>{{ highScore }}</q-item-side>
         </q-item>
+        <q-item>
+          <q-item-side icon="trending_up"></q-item-side>
+          <q-item-main label="Players"></q-item-main>
+          <q-item-side>{{ numPlayers }}</q-item-side>
+        </q-item>
+      </q-list>
+      <q-item-separator />
+      <q-list v-if="gameId" no-border link inset-delimiter>
+        <q-item @click.native="() => copyGameIdToClipboard()">
+          <q-item-main label="Game ID" :sublabel="gameId"></q-item-main>
+          <q-item-side icon="ion-ios-copy"></q-item-side>
+        </q-item>
       </q-list>
     </q-list>
   </q-layout-drawer>
 </template>
 
 <script>
+import { copyToClipboard } from "@/utils";
+
 export default {
   name: "Menu",
   props: {
@@ -54,6 +81,14 @@ export default {
     },
     highScore: {
       type: Number,
+      required: true
+    },
+    numPlayers: {
+      type: Number,
+      required: true
+    },
+    gameId: {
+      type: String,
       required: true
     }
   },
@@ -68,6 +103,17 @@ export default {
     },
     isOpen(to) {
       this.$emit("update:drawer", to);
+    }
+  },
+  methods: {
+    copyGameIdToClipboard() {
+      this.$q.notify({
+        message: `Copied to clipboard`,
+        timeout: 2000,
+        color: "positive",
+        position: "bottom"
+      });
+      return copyToClipboard(this.gameId);
     }
   }
 

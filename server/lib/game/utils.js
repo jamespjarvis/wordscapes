@@ -1,3 +1,4 @@
+const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 
@@ -146,7 +147,19 @@ const readFound = filePath => {
   console.log(data);
 };
 
+const UUIDGeneratorNode = () =>
+  ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
+    (c ^ (crypto.randomBytes(1)[0] & (15 >> (c / 4)))).toString(16)
+  );
+
+const generateId = () =>
+  Math.random()
+    .toString(36)
+    .substr(2, 10);
+
 module.exports = {
+  generateId,
+  UUIDGeneratorNode,
   readFound,
   getAnagrams,
   initialize2DArray,

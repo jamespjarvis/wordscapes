@@ -2,7 +2,6 @@ class Node {
   constructor(isStartOfWord, index) {
     this.isStartOfWord = isStartOfWord;
     this.index = index;
-    this.wordCount = 0;
   }
 }
 class Cell {
