@@ -16,7 +16,8 @@ const createGame = (gameId = null) => {
     game,
     players: [],
     forbidden: [],
-    allowCheat: []
+    allowCheat: [],
+    messages: []
   });
   return game;
 };
@@ -46,7 +47,12 @@ const isCheatAllowed = ({ game, players, allowCheat }) => {
   if (players.length < allowCheat.length) return false;
   if (allowCheat.length >= players.length) {
     if (allowCheat.some(vote => !vote)) {
-      currentGames.set(game.id, { game, players, allowCheat: [] });
+      currentGames.set(game.id, {
+        game,
+        players,
+        allowCheat: [],
+        messages: []
+      });
     } else {
       return true;
     }
@@ -76,8 +82,9 @@ module.exports = function(server) {
   io.on("connection", socket => {
     // MULTIPLAYER
     socket.on("SET_NICKNAME", ({ nickname }) => {
-      console.log("SET_NICKNAME");
+      // console.log("SET_NICKNAME");
       socket.nickname = nickname;
+      socket.emit("NICKNAME_SET", { nickname });
     });
 
     socket.on("CREATE_GAME", () => {
@@ -103,13 +110,17 @@ module.exports = function(server) {
             if (!targetGame.players.find(p => p.id === socket.id))
               targetGame.players.push({
                 id: socket.id,
-                nickname: socket.nickname
+                nickname: socket.nickname,
+                score: 0
               });
             socket.emit("UPDATE", targetGame);
-            socket.emit("GAME_JOINED");
+            socket.emit("GAME_JOINED", { gameId });
+
             socket.broadcast.to(`${gameId}`).emit("PLAYER_JOINED", {
+              id: socket.id,
               nickname: socket.nickname,
-              numPlayers: targetGame.players.length
+              numPlayers: targetGame.players.length,
+              score: 0
             });
           });
         }
@@ -154,7 +165,8 @@ module.exports = function(server) {
         game,
         players: [],
         forbidden: [],
-        allowCheat: []
+        allowCheat: [],
+        messages: []
       });
       socket.emit("GAME_LOADED", { gameId: game.id });
     });
@@ -165,11 +177,19 @@ module.exports = function(server) {
 
       if (currentGames.has(gameId)) {
         // console.log("CHECK_PRESSED_MULTIPLAYER");
+
         const targetGame = currentGames.get(gameId);
+        const previousScore = targetGame.game.score;
         const match = targetGame.game.checkWordsForMatch(pressed);
         if (match) {
+          const player = targetGame.players.find(p => p.id === socket.id);
+          const value = targetGame.game.score - previousScore;
+
+          player.score += value;
+
           io.to(`${targetGame.game.id}`).emit("UPDATE", targetGame);
           socket.emit("CLEAR_PRESSED");
+          currentGames.set(gameId, targetGame);
           saveGameState();
         }
       }
@@ -193,7 +213,13 @@ module.exports = function(server) {
     // CHEATS
 
     socket.on("REQUEST_CHEAT", ({ gameId, type }) => {
-      io.to(`${gameId}`).emit("ALLOW_CHEAT", { gameId, type });
+      // console.log(gameId);
+      if (currentGames.has(gameId)) {
+        const targetGame = currentGames.get(gameId);
+        if (targetGame.game.score >= targetGame.game.prices[type]) {
+          io.to(`${gameId}`).emit("ALLOW_CHEAT", { gameId, type });
+        }
+      }
     });
 
     socket.on("NO_CHEAT", ({ gameId }) => {
@@ -249,9 +275,21 @@ module.exports = function(server) {
     // MESSAGES
 
     socket.on("SEND_MESSAGE", ({ gameId, message, time }) => {
-      socket.broadcast
-        .to(`${gameId}`)
-        .emit("MESSAGE", { message, time, nickname: socket.nickname });
+      if (currentGames.has(gameId)) {
+        const targetGame = currentGames.get(gameId);
+        const newMessage = { message, time, nickname: socket.nickname };
+        targetGame.messages.push(newMessage);
+        io.to(`${gameId}`).emit("MESSAGE", newMessage);
+        targetGame.messages.slice(-20);
+        currentGames.set(gameId, targetGame);
+      }
+    });
+
+    socket.on("GET_MESSAGE_HISTORY", ({ gameId }) => {
+      if (currentGames.has(gameId)) {
+        const { messages } = currentGames.get(gameId);
+        messages.forEach(message => socket.emit("MESSAGE", message));
+      }
     });
   });
   return io;

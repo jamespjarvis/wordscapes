@@ -1,17 +1,12 @@
 <template>
-  <div class="chat__container">
+  <div
+    v-touch-swipe.right="
+      () => $router.replace({ name: 'GameHome', params: { gameId } })
+    "
+    class="chat__container"
+  >
     <div class="chat__wrapper">
-      <q-toolbar color="secondary" style="z-index: 100000;">
-        <q-btn
-          flat
-          round
-          dense
-          icon="keyboard_arrow_left"
-          @click="$router.go(-1)"
-        />
-        <q-toolbar-title>Chat</q-toolbar-title>
-      </q-toolbar>
-      <div class="chat__messages">
+      <div ref="messages" class="chat__messages">
         <q-chat-message :label="new Date().toDateString()" />
         <q-chat-message
           v-for="(m, i) in messages"
@@ -26,7 +21,21 @@
       </div>
       <div class="chat__form">
         <form @submit.prevent="sendMessage">
-          <q-field> <q-input v-model="message" type="text" /> </q-field>
+          <q-field>
+            <q-input
+              v-model="message"
+              type="textarea"
+              autofocus
+              color="primary"
+              :after="[
+                {
+                  icon: 'ion-ios-send',
+                  handler: () => sendMessage()
+                }
+              ]"
+              @keydown.enter.prevent="sendMessage"
+            />
+          </q-field>
         </form>
       </div>
     </div>
@@ -34,8 +43,6 @@
 </template>
 
 <script>
-import { ADD_MESSAGE } from "@/store/mutations.type";
-
 export default {
   name: "GameChat",
   props: {
@@ -54,12 +61,22 @@ export default {
       return this.$store.state.chat.messages;
     }
   },
+  watch: {
+    messages: {
+      handler() {
+        this.$nextTick(() => {
+          this.computeScrollHeight();
+        });
+      },
+      deep: true
+    }
+  },
   methods: {
-    updateTimestamps() {
-      this.messages = this.messages.map(m => {
-        m.timestamp = this.getTimestamp(m.time);
-        return m;
-      });
+    computeScrollHeight() {
+      const el = this.$refs.messages;
+      if (el) {
+        el.scrollTop = el.scrollHeight + 53;
+      }
     },
     sendMessage() {
       if (this.message.length) {
@@ -72,11 +89,6 @@ export default {
         };
 
         this.$socket.emit("SEND_MESSAGE", message);
-
-        this.$store.commit(ADD_MESSAGE, {
-          ...message,
-          sent: true
-        });
         this.message = "";
       }
     }
@@ -86,29 +98,36 @@ export default {
 
 <style lang="scss">
 .chat__container {
-  z-index: 1000;
   background-color: WHITE;
   height: 100%;
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  width: 100vw;
   .chat__wrapper {
     position: relative;
-    max-height: 100%;
     height: 100%;
 
     .chat__messages {
-      overflow-y: auto;
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
       padding: 1rem;
+      // height: 100%;
+      padding-bottom: 53px;
+      overflow-y: scroll;
     }
     .chat__form {
+      background: linear-gradient(
+        to top,
+        rgba(255, 255, 255, 1),
+        rgba(255, 255, 255, 0.75)
+      );
       position: absolute;
       bottom: 0;
       left: 0;
       right: 0;
       padding: 0.5rem;
+      height: 53px;
     }
   }
 }

@@ -1,4 +1,8 @@
-import { ADD_MESSAGE } from "@/store/mutations.type";
+import {
+  ADD_MESSAGE,
+  CLEAR_MESSAGES,
+  SOCKET_NICKNAME_SET
+} from "@/store/mutations.type";
 import { SOCKET_MESSAGE } from "@/store/actions.type";
 
 import { formatDuration } from "@/utils";
@@ -9,6 +13,7 @@ const getTimestamp = time => {
   return diff > 60000 ? formatDuration(diff) : "Just now";
 };
 const state = {
+  nickname: "",
   messages: []
 };
 
@@ -21,6 +26,12 @@ const actions = {
 };
 
 const mutations = {
+  [SOCKET_NICKNAME_SET](state, { nickname }) {
+    state.nickname = nickname;
+  },
+  [CLEAR_MESSAGES](state) {
+    state.messages = [];
+  },
   [ADD_MESSAGE](state, m) {
     const lastMessage = state.messages[state.messages.length - 1];
     if (
@@ -34,6 +45,7 @@ const mutations = {
     } else {
       state.messages.push({
         ...m,
+        sent: m.nickname === state.nickname,
         timestamp: getTimestamp(m.time)
       });
     }

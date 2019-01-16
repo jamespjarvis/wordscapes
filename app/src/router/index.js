@@ -9,15 +9,16 @@ export default new Router({
   base: process.env.BASE_URL,
   routes: [
     {
-      path: "/:gameId?",
+      path: "",
       component: Game,
-      props: route => ({ gameId: route.params.gameId }),
       children: [
         {
           path: "/:gameId",
           component: GameHome,
           name: "GameHome",
-          props: route => ({ gameId: route.params.gameId })
+          props: route => ({
+            gameId: route.params.gameId
+          })
         },
         {
           path: "/:gameId/chat",

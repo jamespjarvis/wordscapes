@@ -2,6 +2,22 @@
   <q-layout id="q-app" view="lHh Lpr lFf">
     <q-layout-header>
       <q-toolbar
+        v-if="$route.name === 'GameChat'"
+        color="primary"
+        :glossy="$q.theme === 'mat'"
+        :inverted="$q.theme === 'ios'"
+      >
+        <q-btn
+          flat
+          dense
+          round
+          icon="keyboard_arrow_left"
+          @click="$router.go(-1)"
+        />
+        <q-toolbar-title>Chat</q-toolbar-title>
+      </q-toolbar>
+      <q-toolbar
+        v-else
         color="primary"
         :glossy="$q.theme === 'mat'"
         :inverted="$q.theme === 'ios'"
@@ -42,10 +58,14 @@
       @handler:join-game="handleJoinGameClick"
     />
     <q-page-container :style="appStyle">
-      <div class="game__wrapper" :class="isLoading ? 'is-loading' : ''">
-        <transition name="fade" mode="out-in">
-          <router-view keep-alive></router-view>
-        </transition>
+      <div class="page__wrapper">
+        <div
+          :key="$route.name"
+          class="game__wrapper"
+          :class="isLoading ? 'is-loading' : ''"
+        >
+          <router-view></router-view>
+        </div>
       </div>
     </q-page-container>
   </q-layout>
@@ -64,6 +84,7 @@ const backgrounds = Object.keys(bgs).map(k => bgs[k]);
 const deleteGameState = () => {
   localStorage.removeItem("gameId");
 };
+import { CLEAR_MESSAGES, UPDATE_PLAYERS } from "@/store/mutations.type";
 
 import { mapState } from "vuex";
 
@@ -71,13 +92,6 @@ export default {
   name: "App",
   components: {
     Menu
-  },
-  props: {
-    gameId: {
-      type: String,
-      required: true,
-      default: ""
-    }
   },
   data() {
     return {
@@ -98,6 +112,9 @@ export default {
       numWords: state => state.game.numWords,
       hasCompletedLevel: state => state.game.levelComplete
     }),
+    gameId() {
+      return this.$store.state.game.id;
+    },
     background() {
       return backgrounds[this.level % backgrounds.length];
     },
@@ -110,6 +127,9 @@ export default {
     }
   },
   watch: {
+    gameId() {
+      this.$store.commit(CLEAR_MESSAGES);
+    },
     score() {
       this.scoreClassList = "animated heartBeat";
       setTimeout(() => {
@@ -201,17 +221,20 @@ export default {
       this.handleJoinGame(gameId);
     });
 
-    this.$socket.on("GAME_JOINED", () => {
+    this.$socket.on("GAME_JOINED", ({ gameId }) => {
+      this.$router.push({ name: "GameHome", params: { gameId } });
       this.isLoadingMessage = "";
       this.isLoading = false;
+      this.$socket.emit("GET_MESSAGE_HISTORY", { gameId });
     });
 
     this.$socket.on("UPDATE", () => {
       this.isLoading = false;
     });
 
-    this.$socket.on("PLAYER_JOINED", ({ nickname }) => {
+    this.$socket.on("PLAYER_JOINED", ({ id, nickname, score }) => {
       this.$q.notify({ message: `${nickname} joined.`, type: "positive" });
+      this.$store.commit(UPDATE_PLAYERS, { id, nickname, score });
     });
     this.$socket.on("PLAYER_LEFT", ({ nickname }) => {
       this.$q.notify({ message: `${nickname} left.`, type: "negative" });
@@ -291,6 +314,9 @@ export default {
             cancel: true,
             color: "primary"
           });
+          if (nicknameInput.length < 3) {
+            throw new Error("Nickname must be at least 3 characters");
+          }
           this.nickname = nicknameInput;
           this.$q.localStorage.set("nickname", this.nickname);
         } catch (err) {
@@ -314,7 +340,6 @@ export default {
     handleCreateGame() {
       // console.log("handleCreateGame");
       deleteGameState();
-      this.$router.replace("/");
       this.leftDrawerOpen = false;
       this.isLoading = true;
       this.isLoadingMessage = "Creating Game...";
@@ -325,12 +350,10 @@ export default {
       // console.log("handleJoinGame");
       this.isLoading = true;
       this.isLoadingMessage = "Joining Game...";
-      this.$router.replace(`/${gameId}`);
       this.$socket.emit("JOIN_GAME", { gameId, nickname: this.nickname });
     },
     handleLoadGame() {
       // console.log("handleLoadGame");
-      this.$router.replace("/");
       const gameId = localStorage.getItem("gameId");
       if (gameId) {
         this.handleJoinGame(gameId);
@@ -416,10 +439,11 @@ body {
 }
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.5s ease;
+  transition: 500ms ease;
 }
+
 .fade-enter,
-.fade-leave-active {
+.fade-leave-to {
   opacity: 0;
 }
 @keyframes fadeIn {
@@ -431,32 +455,34 @@ body {
     opacity: 1;
   }
 }
-.game__wrapper {
-  height: calc(100vh - 51px);
+.page__wrapper {
+  height: 100%;
   background-color: rgba(44, 44, 44, 0.25);
-
-  &.is-loading {
-    .grid__container,
-    .pressed__container,
-    .key__container {
-      display: none;
+  .game__wrapper {
+    height: calc(100vh - 51px);
+    &.is-loading {
+      .grid__container,
+      .pressed__container,
+      .key__container {
+        display: none;
+      }
     }
-  }
 
-  .game__container {
-    height: 100%;
-    width: 100%;
-    max-width: 500px;
-    margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    .grid__container {
-      flex: 1;
-    }
-    @media (min-width: 769px) {
-      align-items: center;
-      & > * {
-        width: 100%;
+    .game__container {
+      height: 100%;
+      width: 100%;
+      max-width: 500px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      .grid__container {
+        flex: 1;
+      }
+      @media (min-width: 769px) {
+        align-items: center;
+        & > * {
+          width: 100%;
+        }
       }
     }
   }

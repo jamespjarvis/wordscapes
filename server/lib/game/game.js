@@ -20,8 +20,8 @@ class Game {
     this.maxWordLength = 6;
 
     this.prices = {
-      randomCell: 50,
-      randomWord: 100
+      CELL: 50,
+      WORD: 100
     };
 
     this.levelComplete = false;
@@ -112,8 +112,8 @@ class Game {
     this.checkGuessedForWin();
   }
   showRandomCell() {
-    if (this.score >= this.prices.randomCell) {
-      this.score -= this.prices.randomCell;
+    if (this.score >= this.prices.CELL) {
+      this.score -= this.prices.CELL;
       const hiddenCells = this.board.cells.filter(c => c && c.isHidden);
       const cell = hiddenCells[Math.floor(Math.random() * hiddenCells.length)];
       cell.isHidden = false;
@@ -121,8 +121,8 @@ class Game {
     }
   }
   showRandomWord() {
-    if (this.score >= this.prices.randomWord) {
-      this.score -= this.prices.randomWord;
+    if (this.score >= this.prices.WORD) {
+      this.score -= this.prices.WORD;
       const hiddenWords = this.words.filter(
         word => !this.guessed.includes(word)
       );

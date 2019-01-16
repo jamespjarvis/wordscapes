@@ -4,4 +4,7 @@ export const SOCKET_CONNECT = "SOCKET_CONNECT";
 export const SOCKET_UPDATE = "SOCKET_UPDATE";
 export const SOCKET_DISCONNECT = "SOCKET_DISCONNECT";
 export const SOCKET_MESSAGE = "SOCKET_MESSAGE";
+export const SOCKET_NICKNAME_SET = "SOCKET_NICKNAME_SET";
 export const ADD_MESSAGE = "addMessage";
+export const CLEAR_MESSAGES = "clearMessages";
+export const UPDATE_PLAYERS = "updatePlayers";
