@@ -39,13 +39,6 @@ Vue.use(VueSocketIO, SocketInstance, { store });
 
 Vue.config.productionTip = false;
 
-router.beforeEach((to, from, next) => {
-  if (!to.params.gameId && !to.params.gameId.length) {
-    return next({ name: "GameHome" });
-  }
-  next();
-});
-
 new Vue({
   store,
   router,
