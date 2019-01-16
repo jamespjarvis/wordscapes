@@ -177,9 +177,10 @@ module.exports = function(server) {
         game.loadGameState(targetGame.game);
         game.revealBoard();
         removeSocketFromCurrentGames(io, socket);
-        socket.emit("UPDATE", { game });
         targetGame.forbidden.push(socket.id);
+        targetGame.game = game;
         currentGames.set(game.id, targetGame);
+        socket.emit("UPDATE", targetGame);
       }
     });
 
