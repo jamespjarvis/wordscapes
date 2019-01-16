@@ -87,6 +87,7 @@ module.exports = function(server) {
         Object.keys(socket.rooms).forEach(room =>
           socket.leave(socket.rooms[room])
         );
+        console.log(targetGame);
         if (targetGame.forbidden.includes(socket.id)) {
           socket.emit("FORBIDDEN");
         } else {
