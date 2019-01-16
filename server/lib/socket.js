@@ -148,24 +148,17 @@ module.exports = function(server) {
     });
 
     // GAMEPLAY
-    socket.on("CHECK_PRESSED", data => {
+    socket.on("CHECK_PRESSED", ({ gameId, pressed }) => {
       // console.log("CHECK_PRESSED");
-      const targetGame = currentGames.get(data.game.id);
-      if (targetGame) {
+
+      if (currentGames.has(gameId)) {
         // console.log("CHECK_PRESSED_MULTIPLAYER");
-        const match = targetGame.game.checkWordsForMatch(data.pressed);
+        const targetGame = currentGames.get(gameId);
+        const match = targetGame.game.checkWordsForMatch(pressed);
         if (match) {
-          saveGameState();
           io.to(`${targetGame.game.id}`).emit("UPDATE", targetGame);
           socket.emit("CLEAR_PRESSED");
-        }
-      } else {
-        // console.log("CHECK_PRESSED_SOLO");
-        const game = new Game();
-        game.loadGameState(data.game);
-        const match = game.checkWordsForMatch(data.pressed);
-        if (match) {
-          socket.emit("UPDATE", { game });
+          saveGameState();
         }
       }
     });

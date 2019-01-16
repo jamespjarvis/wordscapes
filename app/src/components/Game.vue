@@ -107,9 +107,9 @@ export default {
       }
     },
     checkPressed() {
-      const game = this.$store.state.game;
+      const gameId = this.$store.state.game.id;
       this.$socket.emit("CHECK_PRESSED", {
-        game,
+        gameId,
         pressed: this.pressed
       });
     },
