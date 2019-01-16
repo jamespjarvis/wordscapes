@@ -6,9 +6,10 @@ const gamesPath = path.resolve(__dirname, "../db/games.json");
 
 const currentGames = new Map();
 
-const createGame = () => {
+const createGame = gameId => {
   const game = new Game();
   game.initialize();
+  game.id = gameId;
   currentGames.set(game.id, {
     game,
     players: [],
@@ -73,21 +74,21 @@ module.exports = function(server) {
   io.on("connection", socket => {
     // MULTIPLAYER
     socket.on("CREATE_GAME", () => {
-      console.log("CREATE_GAME");
+      // console.log("CREATE_GAME");
       const game = createGame();
       socket.emit("GAME_CREATED", { gameId: game.id });
     });
 
     socket.on("JOIN_GAME", ({ gameId }) => {
-      console.log("JOIN_GAME");
+      // console.log("JOIN_GAME");
 
       if (currentGames.has(gameId)) {
-        console.log(`JOINING_GAME ${gameId}`);
+        // console.log(`JOINING_GAME ${gameId}`);
         const targetGame = currentGames.get(gameId);
         Object.keys(socket.rooms).forEach(room =>
           socket.leave(socket.rooms[room])
         );
-        console.log(targetGame);
+        // console.log(targetGame);
         if (targetGame.forbidden.includes(socket.id)) {
           socket.emit("FORBIDDEN");
         } else {
@@ -102,8 +103,8 @@ module.exports = function(server) {
           });
         }
       } else {
-        createGame(gameId);
-        socket.emit("GAME_CREATED", { gameId });
+        const game = createGame(gameId);
+        socket.emit("GAME_CREATED", { gameId: game.id });
       }
     });
 
@@ -193,12 +194,12 @@ module.exports = function(server) {
     });
 
     socket.on("SHOW_RANDOM_WORD", ({ gameId }) => {
-      console.log("SHOW_RANDOM_WORD");
+      // console.log("SHOW_RANDOM_WORD");
       if (currentGames.has(gameId)) {
         const targetGame = currentGames.get(gameId);
         targetGame.allowCheat.push(true);
         if (isCheatAllowed(targetGame)) {
-          console.log("CHEAT_ALLOWED");
+          // console.log("CHEAT_ALLOWED");
           const game = new Game();
           game.loadGameState(targetGame.game);
           game.showRandomWord();
@@ -214,12 +215,12 @@ module.exports = function(server) {
     });
 
     socket.on("SHOW_RANDOM_CELL", ({ gameId }) => {
-      console.log("SHOW_RANDOM_CELL");
+      // console.log("SHOW_RANDOM_CELL");
       if (currentGames.has(gameId)) {
         const targetGame = currentGames.get(gameId);
         targetGame.allowCheat.push(true);
         if (isCheatAllowed(targetGame)) {
-          console.log("CHEAT_ALLOWED");
+          // console.log("CHEAT_ALLOWED");
           const game = new Game();
           game.loadGameState(targetGame.game);
           game.showRandomCell();
