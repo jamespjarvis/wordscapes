@@ -281,6 +281,7 @@ export default {
     },
     handleCreateGame() {
       // console.log("handleCreateGame");
+      deleteGameState();
       this.$router.replace("/");
       this.leftDrawerOpen = false;
       this.isLoading = true;
