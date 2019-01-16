@@ -44,6 +44,13 @@
             sublabel="Play with other people"
           ></q-item-main>
         </q-item>
+        <q-item :to="{ name: 'GameChat' }">
+          <q-item-side icon="cake" />
+          <q-item-main
+            label="Chat"
+            sublabel="Violence. Speed. Momentum"
+          ></q-item-main>
+        </q-item>
       </q-list>
       <q-item-separator />
       <q-list no-border inset-delimiter>

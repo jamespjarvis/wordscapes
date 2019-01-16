@@ -1,11 +1,11 @@
 self.__precacheManifest = [
   {
-    "revision": "b8275d6950f6c427bb34",
-    "url": "/css/app.4473a011.css"
+    "revision": "03ba4db771519e030aeb",
+    "url": "/css/app.5504e3b0.css"
   },
   {
-    "revision": "b8275d6950f6c427bb34",
-    "url": "/js/app.3aea2026.js"
+    "revision": "03ba4db771519e030aeb",
+    "url": "/js/app.3f9fe1a0.js"
   },
   {
     "revision": "8e227d54850c86b7f50c",
@@ -84,20 +84,16 @@ self.__precacheManifest = [
     "url": "/img/tom-gainor-739887-unsplash.5dcd672b.jpg"
   },
   {
-    "revision": "e9dbbe8a693dd275c16d32feb101f1c1",
-    "url": "/fonts/KFOkCnqEu92Fr1MmgVxIIzQ.e9dbbe8a.woff"
-  },
-  {
     "revision": "a1471d1d6431c893582a5f6a250db3f9",
     "url": "/fonts/KFOlCnqEu92Fr1MmSU5fBBc-.a1471d1d.woff"
   },
   {
-    "revision": "bafb105baeb22d965c70fe52ba6b49d9",
-    "url": "/fonts/KFOmCnqEu92Fr1Mu4mxM.bafb105b.woff"
+    "revision": "e9dbbe8a693dd275c16d32feb101f1c1",
+    "url": "/fonts/KFOkCnqEu92Fr1MmgVxIIzQ.e9dbbe8a.woff"
   },
   {
-    "revision": "de8b7431b74642e830af4d4f4b513ec9",
-    "url": "/fonts/KFOlCnqEu92Fr1MmEU9fBBc-.de8b7431.woff"
+    "revision": "bafb105baeb22d965c70fe52ba6b49d9",
+    "url": "/fonts/KFOmCnqEu92Fr1Mu4mxM.bafb105b.woff"
   },
   {
     "revision": "cf6613d1adf490972c557a8e318e0868",
@@ -106,6 +102,10 @@ self.__precacheManifest = [
   {
     "revision": "8c2ade503b34e31430d6c98aa29a52a3",
     "url": "/fonts/KFOlCnqEu92Fr1MmYUtfBBc-.8c2ade50.woff"
+  },
+  {
+    "revision": "de8b7431b74642e830af4d4f4b513ec9",
+    "url": "/fonts/KFOlCnqEu92Fr1MmEU9fBBc-.de8b7431.woff"
   },
   {
     "revision": "43d5c718339efeb1177aff722d72669d",
@@ -180,7 +180,7 @@ self.__precacheManifest = [
     "url": "/img/jeremy-bishop-527439-unsplash.7a403b62.jpg"
   },
   {
-    "revision": "c73987d7f7e28e2ddbd311566def05ba",
+    "revision": "24ca7a50ea1567777f01a4dbba4c2193",
     "url": "/index.html"
   },
   {

@@ -2,8 +2,7 @@ import {
   UPDATE_GAME,
   SOCKET_CONNECT,
   SOCKET_UPDATE,
-  SOCKET_DISCONNECT,
-  SOCKET_PLAYER_JOIN
+  SOCKET_DISCONNECT
 } from "@/store/mutations.type";
 
 import { difference } from "@/utils";
@@ -29,7 +28,7 @@ const state = {
   ...defaultGameState,
   isConnected: false,
   isLoading: false,
-  numPlayers: 1
+  numPlayers: 0
 };
 
 const getters = {
@@ -50,15 +49,12 @@ const mutations = {
   [SOCKET_DISCONNECT](state) {
     state.isConnected = false;
   },
-  [SOCKET_PLAYER_JOIN](state, { numPlayers }) {
-    state.numPlayers = numPlayers;
-  },
   [UPDATE_GAME](state, { game }) {
     for (let k in game) {
       state[k] = game[k];
     }
   },
-  [SOCKET_UPDATE](state, { game }) {
+  [SOCKET_UPDATE](state, { game, players }) {
     if (game.guessed.length !== state.guessed.length) {
       const diff = difference(game.guessed, state.guessed);
       diff.forEach(d => {
@@ -79,7 +75,7 @@ const mutations = {
     for (let k in game) {
       state[k] = game[k];
     }
-
+    state.numPlayers = players.length;
     localStorage.setItem("gameId", game.id);
   }
 };

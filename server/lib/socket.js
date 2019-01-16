@@ -6,10 +6,12 @@ const gamesPath = path.resolve(__dirname, "../db/games.json");
 
 const currentGames = new Map();
 
-const createGame = gameId => {
+const createGame = (gameId = null) => {
   const game = new Game();
   game.initialize();
-  game.id = gameId;
+  if (gameId) {
+    game.id = gameId;
+  }
   currentGames.set(game.id, {
     game,
     players: [],
@@ -53,19 +55,19 @@ const isCheatAllowed = ({ game, players, allowCheat }) => {
 };
 
 const removeSocketFromCurrentGames = (io, socket) => {
-  currentGames.forEach((targetGame, gameId, map) => {
-    if (targetGame.players.includes(socket.id)) {
-      const updatedPlayers = targetGame.players.filter(p => p !== socket.id);
-      map.set(gameId, { ...targetGame, players: updatedPlayers });
+  currentGames.forEach((targetGame, gameId) => {
+    if (targetGame.players.find(p => p.id === socket.id)) {
+      const updatedPlayers = targetGame.players.filter(p => p.id !== socket.id);
+      currentGames.set(gameId, { ...targetGame, players: updatedPlayers });
       if (updatedPlayers.length) {
-        io.to(`${gameId}`).emit("PLAYER_JOIN", {
+        io.to(`${gameId}`).emit("PLAYER_LEFT", {
+          nickname: socket.nickname,
           numPlayers: updatedPlayers.length
         });
-      } else {
-        saveGameState();
       }
     }
   });
+  saveGameState();
 };
 
 module.exports = function(server) {
@@ -73,6 +75,11 @@ module.exports = function(server) {
 
   io.on("connection", socket => {
     // MULTIPLAYER
+    socket.on("SET_NICKNAME", ({ nickname }) => {
+      console.log("SET_NICKNAME");
+      socket.nickname = nickname;
+    });
+
     socket.on("CREATE_GAME", () => {
       // console.log("CREATE_GAME");
       const game = createGame();
@@ -93,11 +100,15 @@ module.exports = function(server) {
           socket.emit("FORBIDDEN");
         } else {
           socket.join(gameId, () => {
-            if (!targetGame.players.includes(socket.id))
-              targetGame.players.push(socket.id);
+            if (!targetGame.players.find(p => p.id === socket.id))
+              targetGame.players.push({
+                id: socket.id,
+                nickname: socket.nickname
+              });
             socket.emit("UPDATE", targetGame);
             socket.emit("GAME_JOINED");
-            io.to(`${gameId}`).emit("PLAYER_JOIN", {
+            socket.broadcast.to(`${gameId}`).emit("PLAYER_JOINED", {
+              nickname: socket.nickname,
               numPlayers: targetGame.players.length
             });
           });
@@ -233,6 +244,14 @@ module.exports = function(server) {
           io.to(`${gameId}`).emit("UPDATE", updatedGame);
         }
       }
+    });
+
+    // MESSAGES
+
+    socket.on("SEND_MESSAGE", ({ gameId, message, time }) => {
+      socket.broadcast
+        .to(`${gameId}`)
+        .emit("MESSAGE", { message, time, nickname: socket.nickname });
     });
   });
   return io;

@@ -43,14 +43,10 @@
     />
     <q-page-container :style="appStyle">
       <div class="game__wrapper" :class="isLoading ? 'is-loading' : ''">
-        <Game :is-multiplayer="isMultiplayer" />
+        <transition name="fade" mode="out-in">
+          <router-view keep-alive></router-view>
+        </transition>
       </div>
-      <join-game-modal
-        :opened="showJoinGameModal"
-        @update:opened="val => (showJoinGameModal = val)"
-        @game:join="gameId => handleJoinGame(gameId)"
-        @game:create="handleCreateGame"
-      />
     </q-page-container>
   </q-layout>
 </template>
@@ -58,12 +54,9 @@
 <script>
 import axios from "axios";
 import ApiService from "@/common/api.service";
-import { importAll } from "@/utils";
+import { importAll, generateUsername } from "@/utils";
 
 import Menu from "@/components/Menu";
-import Game from "@/components/Game";
-
-import JoinGameModal from "@/components/JoinGameModal";
 
 const bgs = importAll(require.context("@/assets/bgs"));
 const backgrounds = Object.keys(bgs).map(k => bgs[k]);
@@ -77,9 +70,7 @@ import { mapState } from "vuex";
 export default {
   name: "App",
   components: {
-    Menu,
-    Game,
-    JoinGameModal
+    Menu
   },
   props: {
     gameId: {
@@ -95,7 +86,7 @@ export default {
       isLoadingMessage: "",
       scoreClassList: "",
       highScore: 0,
-      showJoinGameModal: false
+      nickname: null
     };
   },
   computed: {
@@ -116,9 +107,6 @@ export default {
         backgroundSize: "cover",
         backgroundRepeat: "no-repeat"
       };
-    },
-    isMultiplayer() {
-      return !!this.gameId.length;
     }
   },
   watch: {
@@ -171,49 +159,64 @@ export default {
     }
   },
   async mounted() {
-    if (this.gameId.length) {
-      this.$socket.on("connect", () => {
-        this.handleJoinGame(this.gameId);
-      });
-    } else {
-      if (navigator.standalone) {
-        document.body.style.position = "fixed";
-        this.handleLoadGame();
-      } else if (this.shouldPromptInstall()) {
-        this.$q.notify({
-          type: "info",
-          timeout: 0,
-          icon: "touch_app",
-          position: "center",
-          message: "Install Wordscapes",
-          detail:
-            "Hit the action button at the bottom of your screen and select 'Add to Home Screen' to add this application to your home screen for quick and easy access.",
-          closeBtn: true,
-          onDismiss: () => this.handleLoadGame()
-        });
-      } else {
-        this.handleLoadGame();
-      }
-    }
+    // if (this.gameId.length) {
+    //   this.$socket.on("connect", () => {
+    //     this.handleJoinGame(this.gameId);
+    //   });
+    // } else {
+    //   if (navigator.standalone) {
+    //     document.body.style.position = "fixed";
+    //     this.handleLoadGame();
+    //   } else if (this.shouldPromptInstall()) {
+    //     this.$q.notify({
+    //       type: "info",
+    //       timeout: 0,
+    //       icon: "touch_app",
+    //       position: "center",
+    //       message: "Install Wordscapes",
+    //       detail:
+    //         "Hit the action button at the bottom of your screen and select 'Add to Home Screen' to add this application to your home screen for quick and easy access.",
+    //       closeBtn: true,
+    //       onDismiss: () => this.handleLoadGame()
+    //     });
+    //   } else {
+    //     this.handleLoadGame();
+    //   }
+    // }
 
     this.highScore = this.getHighScore();
+
+    this.$socket.on("connect", async () => {
+      await this.getNickname();
+    });
 
     this.$socket.on("GAME_CREATED", ({ gameId }) => {
       // console.log("GAME_CREATED");
       this.isLoading = false;
       this.handleJoinGame(gameId);
     });
+
     this.$socket.on("GAME_LOADED", ({ gameId }) => {
       this.isLoading = false;
       this.handleJoinGame(gameId);
     });
+
     this.$socket.on("GAME_JOINED", () => {
       this.isLoadingMessage = "";
       this.isLoading = false;
     });
+
     this.$socket.on("UPDATE", () => {
       this.isLoading = false;
     });
+
+    this.$socket.on("PLAYER_JOINED", ({ nickname }) => {
+      this.$q.notify({ message: `${nickname} joined.`, type: "positive" });
+    });
+    this.$socket.on("PLAYER_LEFT", ({ nickname }) => {
+      this.$q.notify({ message: `${nickname} left.`, type: "negative" });
+    });
+
     this.$socket.on("FORBIDDEN", () => {
       this.isLoading = false;
       this.$q.notify({
@@ -273,6 +276,35 @@ export default {
     });
   },
   methods: {
+    async getNickname() {
+      const nickname = this.$q.localStorage.get.item("nickname");
+      if (nickname) {
+        this.nickname = nickname;
+      } else {
+        try {
+          const nicknameInput = await this.$q.dialog({
+            title: "What's your name?",
+            prompt: {
+              model: "",
+              type: "text"
+            },
+            cancel: true,
+            color: "primary"
+          });
+          this.nickname = nicknameInput;
+          this.$q.localStorage.set("nickname", this.nickname);
+        } catch (err) {
+          const randomName = generateUsername();
+          await this.$q.dialog({
+            title: `Keep your secrets!`,
+            message: `I'll just call you ${randomName} for now.`
+          });
+          this.nickname = randomName;
+        }
+      }
+      this.$socket.emit("SET_NICKNAME", { nickname: this.nickname });
+      this.handleLoadGame();
+    },
     setHighScore(score) {
       localStorage.setItem("highScore", score);
     },
@@ -286,7 +318,7 @@ export default {
       this.leftDrawerOpen = false;
       this.isLoading = true;
       this.isLoadingMessage = "Creating Game...";
-      this.$socket.emit("CREATE_GAME");
+      this.$socket.emit("CREATE_GAME", { nickname: this.nickname });
     },
     handleJoinGame(gameId) {
       this.leftDrawerOpen = false;
@@ -294,7 +326,7 @@ export default {
       this.isLoading = true;
       this.isLoadingMessage = "Joining Game...";
       this.$router.replace(`/${gameId}`);
-      this.$socket.emit("JOIN_GAME", { gameId });
+      this.$socket.emit("JOIN_GAME", { gameId, nickname: this.nickname });
     },
     handleLoadGame() {
       // console.log("handleLoadGame");
@@ -353,8 +385,21 @@ export default {
       deleteGameState();
       this.handleLoadGame();
     },
-    handleJoinGameClick() {
-      this.showJoinGameModal = true;
+    async handleJoinGameClick() {
+      try {
+        const gameId = await this.$q.dialog({
+          title: "Enter Game ID",
+          prompt: {
+            model: "",
+            type: "text"
+          },
+          cancel: true,
+          color: "primary"
+        });
+        this.handleJoinGame(gameId);
+      } catch (err) {
+        this.$q.notify("Wow, so sassy.");
+      }
     }
   }
 };
@@ -369,7 +414,14 @@ body {
   -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
 }
-
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.5s ease;
+}
+.fade-enter,
+.fade-leave-active {
+  opacity: 0;
+}
 @keyframes fadeIn {
   from {
     opacity: 0;
