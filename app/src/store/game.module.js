@@ -6,7 +6,8 @@ import {
   SOCKET_PLAYER_JOIN
 } from "@/store/mutations.type";
 
-import { difference } from "@/utils";
+import { difference, shuffle } from "@/utils";
+import { SHUFFLE_KEY } from "./mutations.type";
 
 const state = {
   id: "",
@@ -74,6 +75,9 @@ const mutations = {
     }
 
     localStorage.setItem("gameId", game.id);
+  },
+  [SHUFFLE_KEY](state) {
+    state.key = shuffle(state.key);
   }
 };
 

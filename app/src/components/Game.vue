@@ -22,7 +22,8 @@ const isProduction = process.env.NODE_ENV === "production";
 import Grid from "@/components/Grid";
 import Pressed from "@/components/Pressed";
 import Key from "@/components/Key";
-import { round, shuffle, throttle } from "@/utils";
+import { round, throttle } from "@/utils";
+import { SHUFFLE_KEY } from "@/store/mutations.type";
 import { mapState } from "vuex";
 
 export default {
@@ -115,7 +116,7 @@ export default {
       });
     },
     shuffleKey() {
-      this.game.key = shuffle(this.game.key);
+      this.$store.commit(SHUFFLE_KEY);
     },
     // window resize event handler
     onWindowResize: throttle(function() {

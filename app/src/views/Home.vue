@@ -252,6 +252,7 @@ export default {
       this.$socket.emit("CREATE_GAME");
     },
     handleJoinGame(gameId) {
+      this.leftDrawerOpen = false;
       // console.log("handleJoinGame");
       this.isLoading = true;
       this.isLoadingMessage = "Joining Game...";

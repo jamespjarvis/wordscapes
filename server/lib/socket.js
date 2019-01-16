@@ -56,16 +56,16 @@ module.exports = function(server) {
   io.on("connection", socket => {
     // MULTIPLAYER
     socket.on("CREATE_GAME", () => {
-      // console.log("CREATE_GAME");
+      console.log("CREATE_GAME");
       const game = createGame();
       socket.emit("GAME_CREATED", { gameId: game.id });
     });
 
     socket.on("JOIN_GAME", ({ gameId }) => {
-      // console.log("JOIN_GAME");
+      console.log("JOIN_GAME");
 
       if (currentGames.has(gameId)) {
-        // console.log(`JOINING_GAME ${gameId}`);
+        console.log(`JOINING_GAME ${gameId}`);
         const targetGame = currentGames.get(gameId);
         Object.keys(socket.rooms).forEach(room =>
           socket.leave(socket.rooms[room])
