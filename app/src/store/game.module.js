@@ -6,10 +6,9 @@ import {
   SOCKET_PLAYER_JOIN
 } from "@/store/mutations.type";
 
-import { difference, shuffle } from "@/utils";
-import { SHUFFLE_KEY } from "./mutations.type";
+import { difference } from "@/utils";
 
-const state = {
+const defaultGameState = {
   id: "",
   key: [],
   words: [],
@@ -24,7 +23,10 @@ const state = {
   numWords: 6,
   maxWordLength: 6,
   prices: { randomCell: 50, randomWord: 100 },
-  levelComplete: false,
+  levelComplete: false
+};
+const state = {
+  ...defaultGameState,
   isConnected: false,
   isLoading: false,
   numPlayers: 1
@@ -68,6 +70,10 @@ const mutations = {
           cell.animate = true;
         });
       });
+    } else {
+      for (let k in defaultGameState) {
+        state[k] = defaultGameState[k];
+      }
     }
 
     for (let k in game) {
@@ -75,9 +81,6 @@ const mutations = {
     }
 
     localStorage.setItem("gameId", game.id);
-  },
-  [SHUFFLE_KEY](state) {
-    state.key = shuffle(state.key);
   }
 };
 

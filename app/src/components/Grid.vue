@@ -82,7 +82,6 @@ export default {
       font-weight: 700;
       --visible: #9068be;
       color: rgba(255, 255, 255, 0);
-      transition: 1000ms ease;
       box-shadow: 0px 0px 2px 1px rgba(0, 0, 0, 0.15);
       border-radius: 1px;
       backface-visibility: hidden;

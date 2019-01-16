@@ -53,7 +53,7 @@
           <q-item-side>{{ highScore }}</q-item-side>
         </q-item>
         <q-item>
-          <q-item-side icon="trending_up"></q-item-side>
+          <q-item-side icon="ion-ios-happy"></q-item-side>
           <q-item-main label="Players"></q-item-main>
           <q-item-side>{{ numPlayers }}</q-item-side>
         </q-item>
@@ -116,17 +116,6 @@ export default {
       return copyToClipboard(this.gameId);
     }
   }
-
-  //   data() {
-  //     return {
-  //       open: this.leftDrawerOpen
-  //     };
-  //   },
-  //   watch: {
-  //     open(to) {
-  //       this.$emit("update:drawer", to);
-  //     }
-  //   }
 };
 </script>
 

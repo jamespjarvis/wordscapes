@@ -160,9 +160,9 @@ export default {
               label: "Next Level",
               icon: "arrow_forward",
               handler: () => {
+                this.$socket.emit("LEVEL_COMPLETE", { gameId: this.gameId });
                 this.isLoading = true;
                 this.isLoadingMessage = "Loading Next Level...";
-                this.$socket.emit("LEVEL_COMPLETE", { gameId: this.gameId });
               }
             }
           ]
@@ -235,6 +235,42 @@ export default {
         ]
       });
     });
+
+    this.$socket.on("ALLOW_CHEAT", ({ gameId, type }) => {
+      let remainingTime = 5000;
+      const interval = setInterval(() => {
+        remainingTime -= 1000;
+        if (remainingTime <= 0) {
+          const cancelButton = [
+            ...document.querySelectorAll(
+              ".modal-buttons > .q-btn > .q-btn-inner"
+            )
+          ].find(b => b.firstChild.textContent === "No");
+          if (cancelButton) {
+            cancelButton.click();
+          }
+        }
+      }, 1000);
+
+      this.$q
+        .dialog({
+          type: "confirm",
+          title: "Somebody wants to cheat.",
+          message: `Do you approve?`,
+          ok: "Yes",
+          cancel: "No"
+        })
+        .then(() => {
+          clearInterval(interval);
+          remainingTime = 5000;
+          this.$socket.emit(`SHOW_RANDOM_${type}`, { gameId });
+        })
+        .catch(() => {
+          clearInterval(interval);
+          remainingTime = 5000;
+          this.$socket.emit(`NO_CHEAT`, { gameId });
+        });
+    });
   },
   methods: {
     setHighScore(score) {
@@ -270,11 +306,13 @@ export default {
       }
     },
     showRandomCell() {
-      this.$socket.emit("SHOW_RANDOM_CELL", { game: this.game });
+      this.$socket.emit("REQUEST_CHEAT", { gameId: this.gameId, type: "CELL" });
+      // this.$socket.emit("SHOW_RANDOM_CELL", { gameId: this.gameId });
       this.leftDrawerOpen = false;
     },
     showRandomWord() {
-      this.$socket.emit("SHOW_RANDOM_WORD", { game: this.game });
+      this.$socket.emit("REQUEST_CHEAT", { gameId: this.gameId, type: "WORD" });
+      // this.$socket.emit("SHOW_RANDOM_WORD", { gameId: this.gameId });
       this.leftDrawerOpen = false;
     },
     shouldPromptInstall() {
@@ -285,7 +323,7 @@ export default {
     },
     async handleForfeitGameClick() {
       this.leftDrawerOpen = false;
-      this.$socket.emit("FORFEIT_GAME", { game: this.game });
+      this.$socket.emit("FORFEIT_GAME", { gameId: this.gameId });
 
       const { data } = await axios.get("https://api.adviceslip.com/advice");
 

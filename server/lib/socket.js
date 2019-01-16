@@ -9,7 +9,12 @@ const currentGames = new Map();
 const createGame = () => {
   const game = new Game();
   game.initialize();
-  currentGames.set(game.id, { game, players: [], forbidden: [] });
+  currentGames.set(game.id, {
+    game,
+    players: [],
+    forbidden: [],
+    allowCheat: []
+  });
   return game;
 };
 
@@ -33,6 +38,18 @@ const readGameState = () => {
 };
 
 readGameState();
+
+const isCheatAllowed = ({ game, players, allowCheat }) => {
+  if (players.length < allowCheat.length) return false;
+  if (allowCheat.length >= players.length) {
+    if (allowCheat.some(vote => !vote)) {
+      currentGames.set(game.id, { game, players, allowCheat: [] });
+    } else {
+      return true;
+    }
+  }
+  return false;
+};
 
 const removeSocketFromCurrentGames = (io, socket) => {
   currentGames.forEach((targetGame, gameId, map) => {
@@ -120,7 +137,12 @@ module.exports = function(server) {
       // console.log("LOAD_GAME");
       const game = new Game();
       game.loadSavedGame(data.game);
-      currentGames.set(game.id, { game, players: [], forbidden: [] });
+      currentGames.set(game.id, {
+        game,
+        players: [],
+        forbidden: [],
+        allowCheat: []
+      });
       socket.emit("GAME_LOADED", { gameId: game.id });
     });
 
@@ -147,33 +169,74 @@ module.exports = function(server) {
       }
     });
 
-    socket.on("FORFEIT_GAME", data => {
+    socket.on("FORFEIT_GAME", ({ gameId }) => {
       // console.log("FORFEIT_GAME");
-      const game = new Game();
-      game.loadGameState(data.game);
-      game.revealBoard();
-      removeSocketFromCurrentGames(io, socket);
-      socket.emit("UPDATE", { game });
-      const targetGame = currentGames.get(game.id);
-      targetGame.forbidden.push(socket.id);
-      currentGames.set(game.id, targetGame);
+      if (currentGames.has(gameId)) {
+        const targetGame = currentGames.get(gameId);
+        const game = new Game();
+        game.loadGameState(targetGame.game);
+        game.revealBoard();
+        removeSocketFromCurrentGames(io, socket);
+        socket.emit("UPDATE", { game });
+        targetGame.forbidden.push(socket.id);
+        currentGames.set(game.id, targetGame);
+      }
     });
 
     // CHEATS
-    socket.on("SHOW_RANDOM_WORD", data => {
-      // console.log("SHOW_RANDOM_WORD");
-      const game = new Game();
-      game.loadGameState(data.game);
-      game.showRandomWord();
-      socket.emit("UPDATE", { game });
+
+    socket.on("REQUEST_CHEAT", ({ gameId, type }) => {
+      io.to(`${gameId}`).emit("ALLOW_CHEAT", { gameId, type });
     });
 
-    socket.on("SHOW_RANDOM_CELL", data => {
-      // console.log("SHOW_RANDOM_CELL");
-      const game = new Game();
-      game.loadGameState(data.game);
-      game.showRandomCell();
-      socket.emit("UPDATE", { game });
+    socket.on("NO_CHEAT", ({ gameId }) => {
+      if (currentGames.has(gameId)) {
+        const targetGame = currentGames.get(gameId);
+        targetGame.allowCheat.push(false);
+        currentGames.set(gameId, targetGame);
+      }
+    });
+
+    socket.on("SHOW_RANDOM_WORD", ({ gameId }) => {
+      console.log("SHOW_RANDOM_WORD");
+      if (currentGames.has(gameId)) {
+        const targetGame = currentGames.get(gameId);
+        targetGame.allowCheat.push(true);
+        if (isCheatAllowed(targetGame)) {
+          console.log("CHEAT_ALLOWED");
+          const game = new Game();
+          game.loadGameState(targetGame.game);
+          game.showRandomWord();
+          const updatedGame = {
+            ...targetGame,
+            game,
+            allowCheat: []
+          };
+          currentGames.set(gameId, updatedGame);
+          io.to(`${gameId}`).emit("UPDATE", updatedGame);
+        }
+      }
+    });
+
+    socket.on("SHOW_RANDOM_CELL", ({ gameId }) => {
+      console.log("SHOW_RANDOM_CELL");
+      if (currentGames.has(gameId)) {
+        const targetGame = currentGames.get(gameId);
+        targetGame.allowCheat.push(true);
+        if (isCheatAllowed(targetGame)) {
+          console.log("CHEAT_ALLOWED");
+          const game = new Game();
+          game.loadGameState(targetGame.game);
+          game.showRandomCell();
+          const updatedGame = {
+            ...targetGame,
+            game,
+            allowCheat: []
+          };
+          currentGames.set(gameId, updatedGame);
+          io.to(`${gameId}`).emit("UPDATE", updatedGame);
+        }
+      }
     });
   });
   return io;

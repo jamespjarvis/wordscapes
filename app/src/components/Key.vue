@@ -8,7 +8,7 @@
     :css="true"
   >
     <q-btn
-      v-for="k in letters"
+      v-for="k in innerLetters"
       :key="`key-${k.id}`"
       :class="pressedKeys.includes(k.id) ? 'is-hidden' : ''"
       color="primary"
@@ -20,7 +20,7 @@
 </template>
 
 <script>
-import { throttle } from "@/utils";
+import { shuffle, throttle } from "@/utils";
 
 export default {
   name: "Key",
@@ -34,11 +34,21 @@ export default {
       required: true
     }
   },
+  data() {
+    return {
+      innerLetters: this.letters
+    };
+  },
   computed: {
     availableKeys() {
       return this.letters.reduce((a, c) => {
         return this.pressedKeys.includes(c.id) ? a : [...a, c];
       }, []);
+    }
+  },
+  watch: {
+    letters() {
+      this.innerLetters = this.letters;
     }
   },
   created() {
@@ -49,7 +59,7 @@ export default {
   },
   methods: {
     handleKeyContainerSwipe: throttle(function() {
-      this.$emit("shufflekey");
+      this.innerLetters = shuffle(this.innerLetters);
     }, 500),
     handleKeyPress(k) {
       this.$emit("keypress", k);

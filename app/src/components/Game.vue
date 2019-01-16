@@ -12,7 +12,6 @@
       :pressed-keys="pressedKeys"
       @update:pressed="updatePressed"
       @keypress="handleKeyPress"
-      @shufflekey="shuffleKey"
     />
   </div>
 </template>
@@ -23,7 +22,6 @@ import Grid from "@/components/Grid";
 import Pressed from "@/components/Pressed";
 import Key from "@/components/Key";
 import { round, throttle } from "@/utils";
-import { SHUFFLE_KEY } from "@/store/mutations.type";
 import { mapState } from "vuex";
 
 export default {
@@ -115,9 +113,6 @@ export default {
         pressed: this.pressed
       });
     },
-    shuffleKey() {
-      this.$store.commit(SHUFFLE_KEY);
-    },
     // window resize event handler
     onWindowResize: throttle(function() {
       this.computeGridStyle();
@@ -125,5 +120,3 @@ export default {
   }
 };
 </script>
-
-<style></style>
