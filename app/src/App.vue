@@ -8,4 +8,15 @@ export default {
 };
 </script>
 
-<style></style>
+<style>
+html,
+body {
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  height: 100vh;
+  width: 100vh;
+}
+</style>
