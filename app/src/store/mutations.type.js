@@ -8,3 +8,5 @@ export const SOCKET_NICKNAME_SET = "SOCKET_NICKNAME_SET";
 export const ADD_MESSAGE = "addMessage";
 export const CLEAR_MESSAGES = "clearMessages";
 export const UPDATE_PLAYERS = "updatePlayers";
+export const SOCKET_PLAYER_LEFT = "SOCKET_PLAYER_LEFT";
+export const UPDATE_CELLS = "updateCells";

@@ -48,7 +48,18 @@ export default {
   },
   watch: {
     letters() {
-      this.innerLetters = this.letters;
+      const k1 = this.letters
+        .map(k => k.letter)
+        .sort()
+        .join("");
+      const k2 = this.innerLetters
+        .map(k => k.letter)
+        .sort()
+        .join("");
+
+      if (k1 !== k2) {
+        this.innerLetters = this.letters;
+      }
     }
   },
   created() {

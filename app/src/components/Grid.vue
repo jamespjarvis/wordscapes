@@ -50,9 +50,10 @@ export default {
           }
         }
         if (cell.animate) {
-          classList.push("animated", "flip");
+          classList.push("animated", cell.animation);
           setTimeout(() => {
             cell.animate = false;
+            cell.animation = "";
           }, 1000);
         }
       }

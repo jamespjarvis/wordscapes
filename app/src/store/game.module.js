@@ -3,7 +3,9 @@ import {
   SOCKET_CONNECT,
   SOCKET_UPDATE,
   SOCKET_DISCONNECT,
-  UPDATE_PLAYERS
+  UPDATE_PLAYERS,
+  SOCKET_PLAYER_LEFT,
+  UPDATE_CELLS
 } from "@/store/mutations.type";
 
 import { difference } from "@/utils";
@@ -56,6 +58,13 @@ const mutations = {
       state[k] = game[k];
     }
   },
+  [UPDATE_CELLS](state, cells) {
+    state.board.cells = cells;
+  },
+  [SOCKET_PLAYER_LEFT](state, { id }) {
+    const playerIndex = state.players.findIndex(p => p.id === id);
+    state.players.splice(playerIndex, 1);
+  },
   [UPDATE_PLAYERS](state, { id, nickname, score }) {
     state.players.push({ id, nickname, score });
     state.numPlayers = state.players.length;
@@ -70,12 +79,9 @@ const mutations = {
         cells.forEach(c => {
           const cell = game.board.cells.find(x => x === c);
           cell.animate = true;
+          cell.animation = "flip";
         });
       });
-    } else {
-      for (let k in defaultGameState) {
-        state[k] = defaultGameState[k];
-      }
     }
 
     for (let k in game) {

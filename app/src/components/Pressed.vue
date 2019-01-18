@@ -1,6 +1,11 @@
 <template>
   <div class="pressed__container" @click="() => $emit('clear-pressed')">
-    <div class="pressed q-display-2 text-weight-bolder">{{ pressed }}</div>
+    <div
+      class="pressed q-display-2 text-weight-bolder"
+      :class="pressedClassList"
+    >
+      {{ pressed }}
+    </div>
   </div>
 </template>
 
@@ -9,6 +14,10 @@ export default {
   name: "Pressed",
   props: {
     pressed: {
+      type: String,
+      required: true
+    },
+    pressedClassList: {
       type: String,
       required: true
     }

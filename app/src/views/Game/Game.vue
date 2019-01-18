@@ -153,7 +153,7 @@ export default {
       }
     },
     async hasCompletedLevel(to) {
-      const { data } = await ApiService.get("/catfact");
+      const { data } = await ApiService.get("/api/catfact");
       if (to) {
         this.$q.notify({
           message: "Congratulations!",
@@ -429,14 +429,6 @@ export default {
 </script>
 
 <style lang="scss">
-html,
-body {
-  overflow: hidden;
-  -webkit-tap-highlight-color: transparent;
-  -webkit-user-select: none;
-  -webkit-tap-highlight-color: transparent;
-  -webkit-touch-callout: none;
-}
 .fade-enter-active,
 .fade-leave-active {
   transition: 500ms ease;

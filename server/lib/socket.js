@@ -15,6 +15,7 @@ const createGame = (gameId = null) => {
   currentGames.set(game.id, {
     game,
     players: [],
+    previousPlayers: [],
     forbidden: [],
     allowCheat: [],
     messages: []
@@ -37,7 +38,14 @@ const readGameState = () => {
   Object.keys(games).forEach(gameId => {
     const game = new Game();
     game.loadSavedGame(games[gameId].game);
-    currentGames.set(gameId, { ...games[gameId], game });
+    const targetGame = games[gameId];
+    targetGame.game = game;
+    targetGame.players = targetGame.players || [];
+    targetGame.allowCheat = targetGame.allowCheat || [];
+    targetGame.forbidden = targetGame.forbidden || [];
+    targetGame.messages = targetGame.messages || [];
+    targetGame.previousPlayers = targetGame.previousPlayers || [];
+    currentGames.set(gameId, targetGame);
   });
 };
 
@@ -63,10 +71,15 @@ const isCheatAllowed = ({ game, players, allowCheat }) => {
 const removeSocketFromCurrentGames = (io, socket) => {
   currentGames.forEach((targetGame, gameId) => {
     if (targetGame.players.find(p => p.id === socket.id)) {
-      const updatedPlayers = targetGame.players.filter(p => p.id !== socket.id);
+      const leavingPlayer = targetGame.players.find(p => p.id === socket.id);
+      const updatedPlayers = targetGame.players.filter(
+        p => p !== leavingPlayer
+      );
+      targetGame.previousPlayers.push(leavingPlayer);
       currentGames.set(gameId, { ...targetGame, players: updatedPlayers });
       if (updatedPlayers.length) {
         io.to(`${gameId}`).emit("PLAYER_LEFT", {
+          id: socket.id,
           nickname: socket.nickname,
           numPlayers: updatedPlayers.length
         });
@@ -107,12 +120,24 @@ module.exports = function(server) {
           socket.emit("FORBIDDEN");
         } else {
           socket.join(gameId, () => {
-            if (!targetGame.players.find(p => p.id === socket.id))
-              targetGame.players.push({
-                id: socket.id,
-                nickname: socket.nickname,
-                score: 0
-              });
+            if (!targetGame.players.find(p => p.id === socket.id)) {
+              const previousPlayer = targetGame.previousPlayers.find(
+                p => p.nickname === socket.nickname
+              );
+              const player = { id: socket.id, nickname: socket.nickname };
+
+              if (previousPlayer) {
+                targetGame.previousPlayers.splice(
+                  targetGame.previousPlayers.indexOf(previousPlayer),
+                  1
+                );
+                player.score = previousPlayer.score;
+              } else {
+                player.score = 0;
+              }
+
+              targetGame.players.push(player);
+            }
             socket.emit("UPDATE", targetGame);
             socket.emit("GAME_JOINED", { gameId });
 
@@ -164,6 +189,7 @@ module.exports = function(server) {
       currentGames.set(game.id, {
         game,
         players: [],
+        previousPlayers: [],
         forbidden: [],
         allowCheat: [],
         messages: []

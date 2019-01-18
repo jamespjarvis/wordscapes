@@ -1,12 +1,15 @@
 const router = require("express").Router();
 const fs = require("fs");
 const path = require("path");
+const { promisify } = require("util");
+
+const readFile = promisify(fs.readFile);
 
 const Game = require("../../lib/game");
 
 router.get("/catfact", async (req, res, next) => {
   const catFacts = JSON.parse(
-    fs.readFileSync(path.resolve(__dirname, "../../db/catFacts.json"))
+    await readFile(path.resolve(__dirname, "../../db/catFacts.json"), "utf8")
   );
   const randomFact = catFacts[Math.floor(Math.random() * catFacts.length)];
   return res.json({ fact: randomFact, length: randomFact.length });

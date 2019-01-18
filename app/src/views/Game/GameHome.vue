@@ -6,7 +6,11 @@
       :is-production="isProduction"
       :cells="cells"
     />
-    <Pressed :pressed="pressed" @clear-pressed="clearPressed" />
+    <Pressed
+      :pressed="pressed"
+      :pressed-class-list="pressedClassList"
+      @clear-pressed="clearPressed"
+    />
     <Key
       :letters="key"
       :pressed-keys="pressedKeys"
@@ -23,6 +27,7 @@ import Pressed from "@/components/Pressed";
 import Key from "@/components/Key";
 import { round, throttle } from "@/utils";
 import { mapState } from "vuex";
+import { UPDATE_CELLS } from "@/store/mutations.type";
 
 export default {
   name: "GameHome",
@@ -37,14 +42,16 @@ export default {
       pressed: "",
       pressedKeys: [],
       isProduction,
-      gridStyle: {}
+      gridStyle: {},
+      pressedClassList: ""
     };
   },
   computed: {
     ...mapState({
       key: state => state.game.key,
       grid: state => state.game.board.grid,
-      cells: state => state.game.board.cells
+      cells: state => state.game.board.cells,
+      guessed: state => state.game.guessed
     })
   },
   watch: {
@@ -107,11 +114,29 @@ export default {
       }
     },
     checkPressed() {
-      const gameId = this.$store.state.game.id;
-      this.$socket.emit("CHECK_PRESSED", {
-        gameId,
-        pressed: this.pressed
-      });
+      if (!this.guessed.includes(this.pressed)) {
+        const gameId = this.$store.state.game.id;
+        this.$socket.emit("CHECK_PRESSED", {
+          gameId,
+          pressed: this.pressed
+        });
+      } else {
+        const cellList = [...this.cells];
+        const cells = cellList.map(cell => {
+          if (cell && cell.words.includes(this.pressed)) {
+            return { ...cell, animate: true, animation: "wobble" };
+          }
+          return cell;
+        });
+
+        this.$store.commit(UPDATE_CELLS, cells);
+
+        // this.pressedClassList = "animated wobble";
+        // this.timeout = setTimeout(() => {
+        //   this.pressedClassList = "";
+        //   clearTimeout(this.timeout);
+        // }, 1000);
+      }
     },
     // window resize event handler
     onWindowResize: throttle(function() {
