@@ -242,6 +242,7 @@ module.exports = function(server) {
       // console.log(gameId);
       if (currentGames.has(gameId)) {
         const targetGame = currentGames.get(gameId);
+        targetGame.allowCheat = [];
         if (targetGame.game.score >= targetGame.game.prices[type]) {
           io.to(`${gameId}`).emit("ALLOW_CHEAT", { gameId, type });
         }
