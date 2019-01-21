@@ -51,13 +51,14 @@ const readGameState = () => {
 
 readGameState();
 
-const isCheatAllowed = ({ game, players, allowCheat }) => {
+const isCheatAllowed = ({ game, players, allowCheat, forbidden }) => {
   if (players.length < allowCheat.length) return false;
   if (allowCheat.length >= players.length) {
     if (allowCheat.some(vote => !vote)) {
       currentGames.set(game.id, {
         game,
         players,
+        forbidden,
         allowCheat: [],
         messages: []
       });
@@ -116,7 +117,7 @@ module.exports = function(server) {
           socket.leave(socket.rooms[room])
         );
         // console.log(targetGame);
-        if (targetGame.forbidden.includes(socket.id)) {
+        if (targetGame.forbidden && targetGame.forbidden.includes(socket.id)) {
           socket.emit("FORBIDDEN");
         } else {
           socket.join(gameId, () => {
