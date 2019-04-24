@@ -22,8 +22,8 @@ const defaultGameState = {
   level: 1,
   score: 0,
   initialWords: 6,
-  numWords: 6,
   maxWordLength: 6,
+  numWords: 6,
   prices: { randomCell: 50, randomWord: 100 },
   levelComplete: false
 };
